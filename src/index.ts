@@ -1,22 +1,36 @@
-import { Client, LocalAuth } from "whatsapp-web.js";
-import qrcode from "qrcode-terminal";
-import { handleMessage } from "./handlers/messageHandler.js";
+import pkg from 'whatsapp-web.js';
+import qrcode from 'qrcode-terminal';
+import { handleMessage } from './handlers/messageHandler.js';
 
+const { Client, LocalAuth } = pkg;
+
+// Inicializa el cliente con autenticación local (se guardará en session.json)
 const client = new Client({
-  authStrategy: new LocalAuth({ dataPath: "./src/session" }),
+  authStrategy: new LocalAuth({
+    dataPath: './session' // carpeta donde se guarda la sesión
+  })
 });
 
-client.on("qr", (qr) => {
-  console.log("📱 Escanea este QR con tu WhatsApp:");
+// Evento: cuando se genera el código QR
+client.on('qr', (qr: string) => {
+  console.log('📲 Escanea este código QR con tu WhatsApp:');
   qrcode.generate(qr, { small: true });
 });
 
-client.on("ready", () => {
-  console.log(" Cliente de WhatsApp conectado y listo");
+// Evento: cuando se inicia sesión correctamente
+client.on('ready', () => {
+  console.log('✅ Bot de WhatsApp iniciado correctamente');
 });
 
-client.on("message", async (message) => {
-  await handleMessage(client, message);
-});
+// Evento: cuando llega un mensaje
+client.on('message', (message: any) => handleMessage(client, message));
 
+// Inicia el cliente
 client.initialize();
+
+// Mantiene el proceso vivo (Render lo necesita)
+const PORT = process.env.PORT || 3000;
+import http from 'http';
+http.createServer((_, res) => res.end('Bot de WhatsApp activo')).listen(PORT, () => {
+  console.log(`🚀 Servidor en puerto ${PORT}`);
+});
