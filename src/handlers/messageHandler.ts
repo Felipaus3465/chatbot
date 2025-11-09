@@ -1,20 +1,42 @@
-import { Client } from "whatsapp-web.js";
-import type { Message } from "whatsapp-web.js";
-import { isHoliday, isWorkDay, isWorkHour } from "./scheduleHandler.js";
+import pkg from 'whatsapp-web.js';
+import qrcode from 'qrcode-terminal';
+import fs from 'fs';
 
-export async function handleMessage(client: Client, message: Message) {
-  const from = message.from;
-  let reply = "";
+const { Client, LocalAuth, MessageMedia } = pkg;
 
-  if (isHoliday()) {
-    reply = "🎉 Hoy es un día feriado. Te atenderemos el próximo día hábil.";
-  } else if (!isWorkDay()) {
-    reply = "📅 No trabajamos fines de semana. Nuestro horario es de lunes a viernes, 7am a 5pm.";
-  } else if (!isWorkHour()) {
-    reply = "⏰ Estamos fuera del horario laboral. Te responderemos mañana.";
-  } else {
-    reply = "👋 ¡Bienvenido a la clínica! Por favor indique:\n• Nombre completo\n• Servicio que desea (Psicología o Homeopatía)\n• Fecha y hora deseadas.";
+// Inicializa el cliente con autenticación local
+const client = new Client({
+  authStrategy: new LocalAuth(),
+  puppeteer: {
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  },
+});
+
+// Muestra el QR para iniciar sesión
+client.on('qr', (qr) => {
+  qrcode.generate(qr, { small: true });
+  console.log('Escanea este código QR con tu teléfono.');
+});
+
+// Listo
+client.on('ready', () => {
+  console.log('✅ Cliente conectado correctamente.');
+});
+
+// 📩 Manejador de mensajes
+client.on('message', async (message) => {
+  console.log(`📨 Mensaje de ${message.from}: ${message.body}`);
+
+  if (message.body.toLowerCase() === 'hola') {
+    await message.reply('👋 ¡Hola! ¿En qué puedo ayudarte?');
   }
 
-  await client.sendMessage(from, reply);
-}
+  // Enviar una imagen
+  if (message.body.toLowerCase() === 'foto') {
+    const media = MessageMedia.fromFilePath('./ejemplo.jpg');
+    await client.sendMessage(message.from, media);
+  }
+});
+
+// Inicia el cliente
+client.initialize();
