@@ -13,12 +13,12 @@ export async function handleMessage(client: Client, message: Message) {
   if (isHoliday()) {
     reply = '🎉 Hoy es un día feriado. Te atenderemos el próximo día hábil.';
   } else if (!isWorkDay()) {
-    reply = '📅 No trabajamos fines de semana. Nuestro horario es de lunes a viernes, 7 a m a 5 p m.';
+    reply = '📅 No trabajamos fines de semana. Nuestro horario es de lunes a viernes, 8 a m a 4 p m.';
   } else if (!isWorkHour()) {
     reply = '⏰ Estamos fuera del horario laboral. Te responderemos mañana.';
   } else {
     reply =
-      '👋 ¡Bienvenido a la clínica! Por favor indique:\n• Nombre completo\n• Servicio que desea (Psicología o Homeopatía)\n• Fecha y hora deseadas.';
+      '👋 ¡Bienvenido a la clínica! Por favor indique:\n• Nombre completo\n• Servicio que desea\n• Fecha y hora deseadas.';
   }
 
   await client.sendMessage(from, reply);
