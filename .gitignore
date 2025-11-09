@@ -1,0 +1,12 @@
+# Node
+node_modules/
+.env
+
+# Sesiones de WhatsApp (LocalAuth)
+.session/
+sessions/
+session.json
+session-*/  # Por si crea múltiples sesiones
+
+# Logs
+*.log
