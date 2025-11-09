@@ -1,41 +1,44 @@
-import pkg from 'whatsapp-web.js';
-import qrcode from 'qrcode-terminal';
-import { handleMessage } from './handlers/messageHandler.js';
+import express from 'express';
+import bodyParser from 'body-parser';
+import dotenv from 'dotenv';
+import { handleMessage } from './messageHandler.js';
 
-const { Client, LocalAuth } = pkg;
+dotenv.config();
 
-// Inicializa el cliente con autenticación local
-const client = new Client({
-  authStrategy: new LocalAuth({
-    dataPath: './session' // carpeta donde se guarda la sesión
-  })
+const app = express();
+app.use(bodyParser.json());
+
+// Endpoint para verificación de webhook
+app.get('/webhook', (req, res) => {
+  const VERIFY_TOKEN = 'mi_token_seguro';
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+
+  if (mode && token === VERIFY_TOKEN) {
+    console.log('Webhook verificado');
+    res.status(200).send(challenge);
+  } else {
+    res.sendStatus(403);
+  }
 });
 
-// Evento: cuando se genera el código QR
-client.on('qr', (qr) => {
-  console.log('📲 Escanea este QR con WhatsApp (terminal):');
+// Endpoint para recibir mensajes entrantes
+app.post('/webhook', async (req, res) => {
+  const entry = req.body.entry?.[0];
+  const changes = entry?.changes?.[0];
+  const value = changes?.value;
+  const messages = value?.messages;
 
-  // Genera QR más grande y escaneable
-  qrcode.generate(qr, {
-    small: false      // QR más grande
-     // margenes mínimos para la terminal
-  });
+  if (messages) {
+    for (const message of messages) {
+      await handleMessage(message);
+    }
+  }
+
+  res.sendStatus(200);
 });
 
-// Evento: cuando se inicia sesión correctamente
-client.on('ready', () => {
-  console.log('✅ Bot de WhatsApp iniciado correctamente');
-});
-
-// Evento: cuando llega un mensaje
-client.on('message', (message) => handleMessage(client, message));
-
-// Inicia el cliente
-client.initialize();
-
-// Mantiene el proceso activo
-import http from 'http';
+// Servidor
 const PORT = process.env.PORT || 3000;
-http.createServer((_, res) => res.end('Bot de WhatsApp activo')).listen(PORT, () => {
-  console.log(`🚀 Servidor en puerto ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
